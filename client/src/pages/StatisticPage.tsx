@@ -1,372 +1,648 @@
-import { ApiOutlined, CodeOutlined } from "@ant-design/icons";
+import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react";
+import { Card, Button } from "../components/UI";
+import { motion } from "framer-motion";
 import {
-  Col,
-  Row,
-  Statistic,
-  Grid,
-  Card,
-  Layout,
-  Button,
-  theme,
-  Typography,
-} from "antd";
-import { LineChart } from "@mui/x-charts/LineChart";
-import * as React from "react";
-const { Content } = Layout;
-const { Title } = Typography;
-const { useBreakpoint } = Grid;
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import type { ChartOptions, ChartData } from 'chart.js';
 
-function StatisticPage() {
-  const { token } = theme.useToken();
-  const [cpuData, setCpuData] = React.useState<number[]>([]); // Dynamic CPU data
-  const [voltageData, setVoltageData] = React.useState<number[]>([]); // Dummy data for Voltage
-  const [currentData, setCurrentData] = React.useState<number[]>([]); // Dummy data for Current
-  const [powerData, setPowerData] = React.useState<number[]>([]); // Dummy data for Power
-  const [cpuUsage, setCpuUsage] = React.useState<number>(0); // Latest CPU usage value
-  const [relayStatus, setRelayStatus] = React.useState([
-    false,
-    false,
-    false,
-    false,
-  ]); // Relay on/off states
-  const screens = useBreakpoint();
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-  // Function to generate random data between a given min and max
-  const generateRandomData = (min: number, max: number) => {
-    return Math.random() * (max - min) + min;
-  };
+const StatisticPage = () => {
+  const [voltageData, setVoltageData] = useState<number[]>([]);
+  const [currentData, setCurrentData] = useState<number[]>([]);
+  const [powerData, setPowerData] = useState<number[]>([]);
+  const [sensor1Data, setSensor1Data] = useState<number[]>([]);
+  const [sensor2Data, setSensor2Data] = useState<number[]>([]);
+  const [sensor3Data, setSensor3Data] = useState<number[]>([]);
+  const [sensor4Data, setSensor4Data] = useState<number[]>([]);
+  const [relayStatus, setRelayStatus] = useState([false, false, false, false]);
+  const [selectedDevice, setSelectedDevice] = useState("device1");
 
-  // Function to generate random CPU usage between 0 and 100
-  const generateRandomCpuUsage = () => {
-    return Math.random() * 100; // Random CPU usage value between 0 and 100
-  };
+  // Available devices for selection (memoized to prevent re-creation)
+  const devices = useMemo(() => [
+    { value: "device1", label: "Smart Home Controller" },
+    { value: "device2", label: "Garden Irrigation System" },
+    { value: "device3", label: "Warehouse Lighting" },
+    { value: "device4", label: "Security Access Control" },
+    { value: "device5", label: "HVAC Controller" },
+  ], []);
 
-  // Function to toggle relay state (on/off)
-  const toggleRelay = (index: number) => {
-    setRelayStatus((prevState) => {
-      const newRelayStatus = [...prevState];
-      newRelayStatus[index] = !newRelayStatus[index]; // Toggle state
-      return newRelayStatus;
-    });
-  };
-
-  // Calculate the number of active relays
-  const activeRelays = relayStatus.filter((status) => status).length;
-
-  // Update data every second
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      const newCpuUsage = generateRandomCpuUsage(); // Generate random CPU usage
-      setCpuUsage(newCpuUsage); // Update CPU usage stat
-
-      // Update the CPU data array (keep last 20 data points)
-      setCpuData((prevData) => {
-        const newData = [...prevData, newCpuUsage];
-        if (newData.length > 21) newData.shift(); // Keep only last 20 values
-        return newData;
-      });
-
-      // Generate random data for each chart
-      const newVoltageData = Array.from({ length: 20 }, () =>
-        generateRandomData(210, 230)
-      );
-      const newCurrentData = Array.from({ length: 20 }, () =>
-        generateRandomData(2, 7)
-      );
-      const newPowerData = Array.from({ length: 20 }, () =>
-        generateRandomData(2, 6)
-      );
-
-      setVoltageData(newVoltageData);
-      setCurrentData(newCurrentData);
-      setPowerData(newPowerData);
-    }, 1000); // Update every second
-
-    return () => clearInterval(interval); // Cleanup interval on unmount
+  // Device selection handler (memoized)
+  const handleDeviceChange = useCallback((value: string) => {
+    setSelectedDevice(value);
   }, []);
 
+  // Function to generate random data between a given min and max with 1 decimal precision
+  const generateRandomData = useCallback((min: number, max: number): number => {
+    const value = Math.random() * (max - min) + min;
+    return Math.round(value * 10) / 10; // Ensure 1 decimal place precision
+  }, []);
+
+  // Debounced data update function to prevent excessive re-renders
+  // Use flushSync to batch all state updates in a single render cycle
+  const updateDataDebounced = useCallback(() => {
+    // Generate all new data at once to minimize re-renders
+    const newVoltage = generateRandomData(220, 240);
+    const newCurrent = generateRandomData(5, 15);
+    const newPower = generateRandomData(1000, 3000);
+    const newSensor1 = generateRandomData(2, 8);
+    const newSensor2 = generateRandomData(1, 6);
+    const newSensor3 = generateRandomData(3, 9);
+    const newSensor4 = generateRandomData(0.5, 4);
+
+    // Use React 18's automatic batching for better performance
+    // All these state updates will be batched automatically
+    setVoltageData((prevData) => {
+      const newData = [...prevData, newVoltage];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+
+    setCurrentData((prevData) => {
+      const newData = [...prevData, newCurrent];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+
+    setPowerData((prevData) => {
+      const newData = [...prevData, newPower];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+
+    setSensor1Data((prevData) => {
+      const newData = [...prevData, newSensor1];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+
+    setSensor2Data((prevData) => {
+      const newData = [...prevData, newSensor2];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+
+    setSensor3Data((prevData) => {
+      const newData = [...prevData, newSensor3];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+
+    setSensor4Data((prevData) => {
+      const newData = [...prevData, newSensor4];
+      return newData.length > 10 ? newData.slice(1) : newData;
+    });
+  }, [generateRandomData]);
+
+  // Function to toggle relay state (on/off) - memoized to prevent re-renders
+  const toggleRelay = useCallback((index: number) => {
+    setRelayStatus((prevState) => {
+      const newRelayStatus = [...prevState];
+      newRelayStatus[index] = !newRelayStatus[index];
+      return newRelayStatus;
+    });
+  }, []);
+
+  // Use effect to simulate real-time data updates with optimized batching
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updateDataDebounced();
+    }, 1000); // Update every 2 seconds
+
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, [updateDataDebounced]);
+
+  const StatCard = useMemo(() => ({ 
+    title, 
+    value, 
+    unit = "", 
+    color = "blue" 
+  }: { 
+    title: string; 
+    value: number | string; 
+    unit?: string;
+    color?: string;
+  }) => {
+    // Ensure consistent formatting for numeric values
+    const formattedValue = typeof value === 'number' ? value.toFixed(1) : value;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        whileHover={{ scale: 1.02 }}
+      >
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+              {title}
+            </p>
+            <motion.p 
+              className={`text-3xl font-bold text-${color}-600 dark:text-${color}-400 transition-all duration-200`}
+              key={formattedValue}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              {formattedValue}
+              <span className="text-lg ml-1">{unit}</span>
+            </motion.p>
+          </div>
+        </Card>
+      </motion.div>
+    );
+  }, []);
+
+  // Enhanced Line Chart Component using Chart.js with advanced memo and optimization
+  const EnhancedLineChart = memo(({ 
+    data, 
+    color, 
+    title, 
+    unit
+  }: { 
+    data: number[]; 
+    color: string; 
+    title: string; 
+    unit: string;
+  }) => {
+    // Use ref to track previous data and prevent unnecessary re-renders
+    const prevDataRef = useRef<number[]>([]);
+    const [chartData, setChartData] = useState<ChartData<'line'>>({ 
+      labels: [], 
+      datasets: [] 
+    });
+    
+    // Color mapping for different chart types (memoized)
+    const colorMap = useMemo(() => ({
+      blue: "#3B82F6",
+      green: "#10B981", 
+      red: "#EF4444",
+      purple: "#8B5CF6",
+      indigo: "#6366F1",
+      pink: "#EC4899",
+      teal: "#14B8A6"
+    }), []);
+    
+    const getColor = useCallback((colorKey: string) => 
+      colorMap[colorKey as keyof typeof colorMap] || "#3B82F6", [colorMap]);
+    
+    // Only update chart data if the actual data has changed
+    useEffect(() => {
+      // Compare with previous data to avoid unnecessary updates
+      const dataChanged = data.length !== prevDataRef.current.length || 
+                          data.some((value, index) => value !== prevDataRef.current[index]);
+      
+      if (dataChanged && data.length > 0) {
+        const lastTenData = data.slice(-10);
+        
+        const newChartData = {
+          labels: lastTenData.map((_, index) => `T${index + 1}`),
+          datasets: [
+            {
+              label: title,
+              data: lastTenData.map(value => Number(value.toFixed(1))),
+              borderColor: getColor(color),
+              backgroundColor: getColor(color) + '20', // Add transparency
+              borderWidth: 2,
+              fill: false,
+              tension: 0.1,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              pointBackgroundColor: getColor(color),
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+            },
+          ],
+        };
+        
+        setChartData(newChartData);
+        prevDataRef.current = [...data]; // Update the ref
+      }
+    }, [data, title, color, getColor]);
+
+    // Chart.js options (memoized to prevent recreation)
+    const options: ChartOptions<'line'> = useMemo(() => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false, // Disable animations to prevent re-renders
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          titleColor: '#374151',
+          bodyColor: '#374151',
+          borderColor: '#E5E7EB',
+          borderWidth: 1,
+          callbacks: {
+            label: (context) => {
+              const value = Number(context.parsed.y).toFixed(1);
+              return `${title}: ${value} ${unit}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          display: false,  // Hide x-axis completely
+        },
+        y: {
+          display: false,  // Hide y-axis completely
+        },
+      },
+    }), [title, unit]);
+    
+    if (data.length < 2) {
+      return (
+        <div className="h-48 flex items-center justify-center text-gray-400">
+          <span>Loading chart data...</span>
+        </div>
+      );
+    }
+    
+    const currentValue = data[data.length - 1] || 0;
+    
+    return (
+      <motion.div 
+        className="space-y-4"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        {/* Header with current value and legend */}
+        <motion.div 
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <motion.span 
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            key={currentValue}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            Current: {Number(currentValue).toFixed(1)} {unit}
+          </motion.span>
+          <div className="flex items-center space-x-2">
+            <motion.div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: getColor(color) }}
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <span className="text-xs text-gray-500 dark:text-gray-400">{title}</span>
+          </div>
+        </motion.div>
+        
+        {/* Chart.js Line Chart */}
+        <motion.div 
+          className="h-40"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <Line data={chartData} options={options} />
+        </motion.div>
+        
+        {/* Statistics */}
+        <motion.div 
+          className="flex justify-between text-xs text-gray-500 dark:text-gray-400"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <span>Data Points: {data.slice(-10).length}</span>
+          <span>Live Updates Every 2s</span>
+        </motion.div>
+      </motion.div>
+    );
+  }, (prevProps, nextProps) => {
+    // Custom comparison function for React.memo
+    // Only re-render if data, color, title, or unit actually changed
+    return prevProps.data.length === nextProps.data.length &&
+           prevProps.data.every((value, index) => value === nextProps.data[index]) &&
+           prevProps.color === nextProps.color &&
+           prevProps.title === nextProps.title &&
+           prevProps.unit === nextProps.unit;
+  });
+  
+  // Set display name for debugging
+  EnhancedLineChart.displayName = 'EnhancedLineChart';
+
   return (
-    <Content
-      style={{
-        margin: "24px 16px",
-        paddingLeft: 50,
-        paddingRight: 50,
-        paddingTop: 30,
-        paddingBottom: 30,
-        minHeight: 280,
-      }}
+    <motion.div 
+      className="min-h-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
     >
-      <Row gutter={[40, 25]}>
-        <Col
-          xs={24}
-          sm={24}
-          md={11}
-          lg={11}
-          push={0}
-          style={{
-            padding: "20px",
-            backgroundColor: token.colorBgContainer,
-            borderRadius: "8px", // Border radius to round the corners
-            border: "1px solid #d9d9d9", // Border with a 1px solid color
-          }}
+      {/* Header */}
+      <motion.div 
+        className="mb-6"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Statistics
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Real-time monitoring and control statistics
+            </p>
+          </motion.div>
+          
+          {/* Device Selection */}
+          <motion.div 
+            className="flex items-center space-x-3"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Device:
+            </span>
+            <select
+              value={selectedDevice}
+              onChange={(e) => handleDeviceChange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            >
+              {devices.map((device) => (
+                <option key={device.value} value={device.value}>
+                  {device.label}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Main Sensors Statistics */}
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+      >
+        {useMemo(() => (
+          <StatCard
+            title="Main Voltage Sensor"
+            value={voltageData[voltageData.length - 1] || 0}
+            unit="V"
+            color="blue"
+          />
+        ), [voltageData])}
+        {useMemo(() => (
+          <StatCard
+            title="Main Current Sensor"
+            value={currentData[currentData.length - 1] || 0}
+            unit="A"
+            color="green"
+          />
+        ), [currentData])}
+        {useMemo(() => (
+          <StatCard
+            title="Power"
+            value={powerData[powerData.length - 1] || 0}
+            unit="W"
+            color="red"
+          />
+        ), [powerData])}
+      </motion.div>
+
+      {/* Relay Controls - Memoized to prevent unnecessary re-renders */}
+      {useMemo(() => (
+        <motion.div 
+          className="mb-8"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <Card
-            title={<Title level={4}>Device Statistics</Title>}
-            style={{
-              borderRadius: "8px",
-              height: "100%", // Set height to 100% to match the server statistics card height
-            }}
-          >
-            <Row justify={"center"}>
-              <Col
-                span={24}
-                style={{
-                  paddingTop: "0px",
-                  display: "flex",
-                  alignItems: "center", // Horizontally center
-                  justifyContent:
-                    screens.lg || screens.md ? "flex-start" : "center",
-                  height: "100%", // Make the div take full height
-                }}
-              >
-                <Statistic
-                  title="Active Relays"
-                  value={activeRelays} // Display active relays count
-                  suffix={`/4`}
-                  prefix={<ApiOutlined />}
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col
-                span={24}
-                push={0}
-                style={{
-                  paddingTop: "0px",
-                }}
-              >
-                <Row justify={"space-between"}>
-                  {["Relay 1", "Relay 2", "Relay 3", "Relay 4"].map(
-                    (relay, index) => (
-                      <Col
-                        xs={24}
-                        sm={6}
-                        md={6}
-                        lg={6}
-                        push={0}
-                        key={index}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column", // Align title above button
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Title level={5}>{relay}</Title>
-                        <Button
-                          type="primary"
-                          danger={!relayStatus[index]}
-                          style={{ width: "100%" }}
-                          onClick={() => toggleRelay(index)}
-                        >
-                          {relayStatus[index] ? "On" : "Off"}
-                        </Button>
-                      </Col>
-                    )
-                  )}
-                </Row>
-              </Col>
-            </Row>
+          <Card title="Relay Controls">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {relayStatus.map((status, index) => (
+                <motion.div
+                  key={index}
+                  className="text-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Relay {index + 1}
+                  </p>
+                  <div className="mb-3">
+                    <motion.div
+                      className={`w-8 h-8 mx-auto rounded-full transition-all duration-300 ${
+                        status
+                          ? "bg-green-500 shadow-lg shadow-green-500/30"
+                          : "bg-red-500"
+                      }`}
+                      animate={status ? { 
+                        boxShadow: [
+                          "0 0 0 0 rgba(34, 197, 94, 0.4)",
+                          "0 0 0 10px rgba(34, 197, 94, 0)",
+                          "0 0 0 0 rgba(34, 197, 94, 0)"
+                        ]
+                      } : {}}
+                      transition={{ duration: 1.5, repeat: status ? Infinity : 0 }}
+                    />
+                  </div>
+                  <motion.p 
+                    className={`text-sm font-semibold mb-3 transition-colors duration-200 ${
+                      status ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                    }`}
+                    key={status ? "ON" : "OFF"}
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {status ? "ON" : "OFF"}
+                  </motion.p>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      onClick={() => toggleRelay(index)}
+                      variant={status ? "danger" : "primary"}
+                      size="sm"
+                      className="w-full"
+                    >
+                      {status ? "Turn OFF" : "Turn ON"}
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </div>
           </Card>
-        </Col>
+        </motion.div>
+      ), [relayStatus, toggleRelay])}
 
-        <Col
-          xs={24}
-          sm={24}
-          md={12}
-          lg={12}
-          push={screens.lg || screens.md ? 1 : 0}
-          style={{
-            padding: "20px",
-            backgroundColor: token.colorBgContainer,
-            borderRadius: "8px", // Border radius to round the corners
-            border: "1px solid #d9d9d9", // Border with a 1px solid color
-          }}
+      {/* Main Sensor Charts */}
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card
-            title={<Title level={4}>Server Statistics</Title>}
-            style={{
-              borderRadius: "8px",
-              height: "100%", // Set height to 100% to match the relay statistics card height
-            }}
-          >
-            <Row justify="space-between" align="middle">
-              <Col>
-                <Statistic
-                  title="CPU"
-                  value={`${cpuUsage.toFixed(0)}%`} // Display CPU usage with 2 decimal places
-                  suffix="/ 100%"
-                  prefix={<CodeOutlined />}
-                />
-              </Col>
-              <Col>
-                <div style={{ textAlign: "center" }}>
-                  <Title level={4} style={{ marginTop: 10 }}>
-                    CPU Usage Graph
-                  </Title>
-                </div>
-              </Col>
-            </Row>
-
-            {/* Real-time CPU usage graph */}
-            <LineChart
-              height={200}
-              margin={{ left: -10, bottom: 0 }}
-              xAxis={[{ data: Array.from({ length: 21 }, (_, i) => i) }]}
-              series={[
-                {
-                  data: cpuData, // Last 20 CPU usage data points
-                  valueFormatter: (value) =>
-                    value == null ? "?" : value.toString(),
-                  showMark: false,
-                  label: "CPU Usage",
-                  color: "#1890ff",
-                  area: true, // Fill the area under the line
-                },
-              ]}
-            />
+          <Card title="Main Voltage Sensor Statistic">
+            <div className="p-4">
+              <EnhancedLineChart
+                data={voltageData}
+                color="blue"
+                title="Voltage"
+                unit="V"
+              />
+            </div>
           </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[40, 25]} style={{ marginTop: "20px" }}>
-        <Col
-          push={0}
-          style={{
-            padding: "0px",
-            borderRadius: "8px", // Border radius to round the corners
-            border: "1px solid #d9d9d9", // Border with a 1px solid color
-          }}
-          xs={24}
-          sm={24}
-          md={11}
-          lg={11}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {/* Voltage LineChart */}
-          <Card
-            title={<Title level={4}>Voltage Statistics</Title>}
-            style={{
-              borderRadius: "8px",
-              padding: "20px",
-              backgroundColor: token.colorBgContainer,
-            }}
-          >
-            <LineChart
-              height={150}
-              margin={{ left: -10, bottom: 0 }}
-              xAxis={[
-                {
-                  data: [
-                    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                    18, 19, 20,
-                  ],
-                },
-              ]}
-              series={[
-                {
-                  data: voltageData, // Use the moving data for voltage
-                  valueFormatter: (value) =>
-                    value == null ? "NaN" : value.toString(),
-                },
-              ]}
-            />
+          <Card title="Main Current Sensor Statistic">
+            <div className="p-4">
+              <EnhancedLineChart
+                data={currentData}
+                color="green"
+                title="Current"
+                unit="A"
+              />
+            </div>
           </Card>
-
-          {/* Current LineChart */}
-          <Card
-            title={<Title level={4}>Current Statistics</Title>}
-            style={{
-              borderRadius: "8px",
-              padding: "20px",
-              backgroundColor: token.colorBgContainer,
-            }}
-          >
-            <LineChart
-              hideLegend={true}
-              height={150}
-              margin={{ left: -20, bottom: 0 }}
-              xAxis={[
-                {
-                  data: [
-                    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                    18, 19, 20,
-                  ],
-                },
-              ]}
-              series={[
-                {
-                  data: currentData, // Use the moving data for current
-                  valueFormatter: (value) =>
-                    value == null ? "?" : value.toString(),
-                  showMark: false,
-                  label: "Relay 1",
-                  color: "#1890ff",
-                },
-              ]}
-            />
-          </Card>
-        </Col>
-
-        {/* Power LineChart */}
-        <Col
-          xs={24}
-          sm={24}
-          md={12}
-          lg={12}
-          push={screens.lg || screens.md ? 1 : 0}
-          style={{
-            padding: "0px",
-            backgroundColor: token.colorBgContainer,
-            borderRadius: "8px", // Border radius to round the corners
-            border: "1px solid #d9d9d9", // Border with a 1px solid color
-          }}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Card
-            title={<Title level={4}>Power Statistics</Title>}
-            style={{
-              borderRadius: "8px",
-              padding: "0px",
-              backgroundColor: token.colorBgContainer,
-            }}
-          >
-            <LineChart
-              hideLegend={true}
-              margin={{ left: -20, bottom: 0 }}
-              xAxis={[
-                {
-                  data: [
-                    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                    18, 19, 20,
-                  ],
-                },
-              ]}
-              series={[
-                {
-                  data: powerData, // Use the moving data for power
-                  valueFormatter: (value) =>
-                    value == null ? "?" : value.toString(),
-                  showMark: false,
-                  label: "Relay 1",
-                  color: "#1890ff",
-                },
-              ]}
-              height={400}
-            />
+          <Card title="Power Statistic">
+            <div className="p-4">
+              <EnhancedLineChart
+                data={powerData}
+                color="red"
+                title="Power"
+                unit="W"
+              />
+            </div>
           </Card>
-        </Col>
-      </Row>
-    </Content>
+        </motion.div>
+      </motion.div>
+
+      {/* Individual Current Sensor Charts */}
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          whileHover={{ scale: 1.02 }}
+        >
+          <Card title="Current Sensor 1 Statistics">
+            <div className="p-3">
+              <EnhancedLineChart
+                data={sensor1Data}
+                color="purple"
+                title="Sensor 1"
+                unit="A"
+              />
+            </div>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          whileHover={{ scale: 1.02 }}
+        >
+          <Card title="Current Sensor 2 Statistics">
+            <div className="p-3">
+              <EnhancedLineChart
+                data={sensor2Data}
+                color="indigo"
+                title="Sensor 2"
+                unit="A"
+              />
+            </div>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          whileHover={{ scale: 1.02 }}
+        >
+          <Card title="Current Sensor 3 Statistics">
+            <div className="p-3">
+              <EnhancedLineChart
+                data={sensor3Data}
+                color="pink"
+                title="Sensor 3"
+                unit="A"
+              />
+            </div>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          whileHover={{ scale: 1.02 }}
+        >
+          <Card title="Current Sensor 4 Statistics">
+            <div className="p-3">
+              <EnhancedLineChart
+                data={sensor4Data}
+                color="teal"
+                title="Sensor 4"
+                unit="A"
+              />
+            </div>
+          </Card>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
-}
+};
 
 export default StatisticPage;
+
+

@@ -1,41 +1,35 @@
+import { useState } from "react";
+import { Card, Button, Input, Select, Modal } from "../components/UI";
 import {
-  ApiOutlined,
-  WifiOutlined,
-  ExclamationCircleOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons";
-import {
-  Col,
-  Row,
-  Statistic,
-  Grid,
-  Layout,
-  Typography,
-  Card,
-  Button,
-  Modal,
-  Select,
-  Input,
-} from "antd";
-import React, { useState } from "react";
+  WifiIcon,
+  ExclamationIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  EditIcon,
+  DeleteIcon,
+  PlusIcon,
+} from "../components/Icons";
 
-const { Content } = Layout;
-const { Title } = Typography;
-const { useBreakpoint } = Grid;
-const { Option } = Select;
+interface Device {
+  key: string;
+  deviceName: string;
+  status: string;
+  location: string;
+  relay1: string;
+  relay2: string;
+  relay3: string;
+  relay4: string;
+  lastSeen: string;
+}
 
 const DevicePage = () => {
-  const screens = useBreakpoint();
   const [isAddDeviceModalOpen, setIsAddDeviceModalOpen] = useState(false);
   const [isEditDeviceModalOpen, setIsEditDeviceModalOpen] = useState(false);
-  const [devices, setDevices] = useState([
+  const [devices, setDevices] = useState<Device[]>([
     {
       key: "1",
       deviceName: "Device Name 1",
-      status: "Online", // Adding status
+      status: "Online",
       location: "Living Room",
       relay1: "On",
       relay2: "Off",
@@ -46,7 +40,7 @@ const DevicePage = () => {
     {
       key: "2",
       deviceName: "Device Name 2",
-      status: "Online", // Adding status
+      status: "Online",
       location: "Bedroom",
       relay1: "Off",
       relay2: "On",
@@ -54,338 +48,287 @@ const DevicePage = () => {
       relay4: "On",
       lastSeen: "13/06/2025, 01:10:08",
     },
-    // More devices...
   ]);
+
   const [newDevice, setNewDevice] = useState({
     deviceName: "",
-    status: "Offline", // Default status to "Offline"
+    status: "Offline",
     location: "",
     relay1: "Off",
     relay2: "Off",
     relay3: "Off",
     relay4: "Off",
   });
-  const [editDevice, setEditDevice] = useState<any>({});
 
-  // Add Device Modal Handler
+  const [editDevice, setEditDevice] = useState<Partial<Device>>({});
+
   const handleAddDeviceOk = () => {
     setDevices([
       ...devices,
       {
-        key: devices.length + 1 + "",
+        key: (devices.length + 1).toString(),
         ...newDevice,
         lastSeen: new Date().toLocaleString(),
       },
     ]);
+    setNewDevice({
+      deviceName: "",
+      status: "Offline",
+      location: "",
+      relay1: "Off",
+      relay2: "Off",
+      relay3: "Off",
+      relay4: "Off",
+    });
     setIsAddDeviceModalOpen(false);
   };
 
-  const handleAddDeviceCancel = () => {
-    setIsAddDeviceModalOpen(false);
-  };
-
-  // Edit Device Modal Handler
   const handleEditDeviceOk = () => {
     const updatedDevices = devices.map((device) =>
-      device.key === editDevice.key ? editDevice : device
+      device.key === editDevice.key ? { ...device, ...editDevice } : device
     );
     setDevices(updatedDevices);
     setIsEditDeviceModalOpen(false);
   };
 
-  const handleEditDeviceCancel = () => {
-    setIsEditDeviceModalOpen(false);
-  };
-
-  // Delete Device Handler
   const handleDeleteDevice = (key: string) => {
     setDevices(devices.filter((device) => device.key !== key));
   };
 
-  // Handle Relay Change
   const handleRelayChange = (value: string, relay: string) => {
-    setEditDevice((prevDevice: any) => ({
+    setEditDevice((prevDevice) => ({
       ...prevDevice,
       [relay]: value,
     }));
   };
 
-  return (
-    <Content
-      style={{
-        margin: "24px 16px",
-        paddingLeft: 50,
-        paddingRight: 50,
-        paddingTop: 30,
-        paddingBottom: 30,
-        minHeight: 280,
-      }}
-    >
-      {/* Header with Title and Add Device Button */}
-      <Row justify="space-between" style={{ marginBottom: 20 }}>
-        <Col>
-          <Title level={3}>Device Page</Title>
-        </Col>
-        <Col>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            style={{ marginTop: "8px" }}
-            onClick={() => setIsAddDeviceModalOpen(true)}
-          >
-            Add Device
-          </Button>
-        </Col>
-      </Row>
+  const StatusIcon = ({ status }: { status: string }) => {
+    if (status === "Online") {
+      return <WifiIcon className="text-green-500" size={20} />;
+    }
+    return <ExclamationIcon className="text-red-500" size={20} />;
+  };
 
-      {/* Dashboard Overview Section */}
-      <Row gutter={[40, 25]}>
-        {devices.map((device) => (
-          <Col
-            xs={24}
-            sm={24}
-            md={24}
-            lg={8}
+  const RelayStatus = ({ status }: { status: string }) => {
+    if (status === "On") {
+      return <CheckCircleIcon className="text-blue-500" size={24} />;
+    }
+    return <XCircleIcon className="text-red-500" size={24} />;
+  };
+
+  return (
+    <div className="animate-fade-in">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Devices
+        </h1>
+        <Button
+          onClick={() => setIsAddDeviceModalOpen(true)}
+          className="flex items-center space-x-2"
+        >
+          <PlusIcon size={16} />
+          <span>Add Device</span>
+        </Button>
+      </div>
+
+      {/* Device Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {devices.map((device, index) => (
+          <div
             key={device.key}
-            style={{
-              padding: "20px",
-              backgroundColor: "#fff",
-              borderRadius: "8px",
-              border: "1px solid #d9d9d9",
-              display: "flex",
-              flexDirection: "column",
-              marginBottom: "20px", // Adding gap between devices
-              marginRight: 20,
-            }}
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 0.1}s` }}
           >
             <Card
               title={device.deviceName}
               extra={
-                <div>
-                  <Button
-                    shape="circle"
-                    icon={<EditOutlined />}
-                    style={{ marginRight: "10px" }}
+                <div className="flex space-x-2">
+                  <button
                     onClick={() => {
                       setEditDevice(device);
                       setIsEditDeviceModalOpen(true);
                     }}
-                  />
-                  <Button
-                    shape="circle"
-                    icon={<DeleteOutlined />}
+                    className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
+                  >
+                    <EditIcon size={16} />
+                  </button>
+                  <button
                     onClick={() => handleDeleteDevice(device.key)}
-                  />
+                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                  >
+                    <DeleteIcon size={16} />
+                  </button>
                 </div>
               }
             >
-              <Row>
-                <Col span={24}>
-                  <Statistic
-                    title="Status"
-                    value={device.status}
-                    valueStyle={{
-                      color: device.status === "Online" ? "green" : "red",
-                    }}
-                    prefix={
-                      device.status === "Online" ? (
-                        <WifiOutlined style={{ color: "green" }} />
-                      ) : (
-                        <ExclamationCircleOutlined style={{ color: "red" }} />
-                      )
-                    }
-                  />
-                </Col>
-              </Row>
+              <div className="space-y-4">
+                {/* Status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Status
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <StatusIcon status={device.status} />
+                    <span
+                      className={`font-medium ${
+                        device.status === "Online"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      {device.status}
+                    </span>
+                  </div>
+                </div>
 
-              <Row>
-                <Col span={24}>
-                  <Title level={5}>Location: {device.location}</Title>
-                </Col>
-              </Row>
+                {/* Location */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Location
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    {device.location}
+                  </span>
+                </div>
 
-              <Row>
-                <Col span={24}>
-                  <Title level={5}>Last Seen: {device.lastSeen}</Title>
-                </Col>
-              </Row>
+                {/* Last Seen */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Last Seen
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    {device.lastSeen}
+                  </span>
+                </div>
 
-              {/* Relay Statuses with Icons */}
-              <Row gutter={[8, 8]}>
-                <Col span={12}>
-                  <Title level={5}>Relay 1</Title>
-                  {device.relay1 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Title level={5}>Relay 2</Title>
-                  {device.relay2 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Title level={5}>Relay 3</Title>
-                  {device.relay3 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Title level={5}>Relay 4</Title>
-                  {device.relay4 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-              </Row>
+                {/* Relays */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  {[1, 2, 3, 4].map((relayNum) => (
+                    <div key={relayNum} className="flex flex-col items-center space-y-2">
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Relay {relayNum}
+                      </div>
+                      <RelayStatus
+                        status={device[`relay${relayNum}` as keyof Device] as string}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </Card>
-          </Col>
+          </div>
         ))}
-      </Row>
+      </div>
 
       {/* Add Device Modal */}
       <Modal
+        isOpen={isAddDeviceModalOpen}
+        onClose={() => setIsAddDeviceModalOpen(false)}
         title="Add New Device"
-        open={isAddDeviceModalOpen}
-        onOk={handleAddDeviceOk}
-        onCancel={handleAddDeviceCancel}
+        footer={
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="secondary"
+              onClick={() => setIsAddDeviceModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddDeviceOk}>Add Device</Button>
+          </div>
+        }
       >
-        <Input
-          placeholder="Device Name"
-          value={newDevice.deviceName}
-          onChange={(e) =>
-            setNewDevice({ ...newDevice, deviceName: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        <Input
-          placeholder="Location"
-          value={newDevice.location}
-          onChange={(e) =>
-            setNewDevice({ ...newDevice, location: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        {/* Relay Statuses */}
-        <Select
-          value={newDevice.relay1}
-          onChange={(value) => setNewDevice({ ...newDevice, relay1: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={newDevice.relay2}
-          onChange={(value) => setNewDevice({ ...newDevice, relay2: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={newDevice.relay3}
-          onChange={(value) => setNewDevice({ ...newDevice, relay3: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={newDevice.relay4}
-          onChange={(value) => setNewDevice({ ...newDevice, relay4: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
+        <div className="space-y-4">
+          <Input
+            placeholder="Device Name"
+            value={newDevice.deviceName}
+            onChange={(e) =>
+              setNewDevice({ ...newDevice, deviceName: e.target.value })
+            }
+          />
+          <Input
+            placeholder="Location"
+            value={newDevice.location}
+            onChange={(e) =>
+              setNewDevice({ ...newDevice, location: e.target.value })
+            }
+          />
+          <Select
+            value={newDevice.status}
+            onChange={(value) => setNewDevice({ ...newDevice, status: value })}
+          >
+            <option value="Offline">Offline</option>
+            <option value="Online">Online</option>
+          </Select>
+          {[1, 2, 3, 4].map((relayNum) => (
+            <Select
+              key={relayNum}
+              value={newDevice[`relay${relayNum}` as keyof typeof newDevice]}
+              onChange={(value) =>
+                setNewDevice({ ...newDevice, [`relay${relayNum}`]: value })
+              }
+            >
+              <option value="Off">Relay {relayNum} - Off</option>
+              <option value="On">Relay {relayNum} - On</option>
+            </Select>
+          ))}
+        </div>
       </Modal>
 
       {/* Edit Device Modal */}
       <Modal
+        isOpen={isEditDeviceModalOpen}
+        onClose={() => setIsEditDeviceModalOpen(false)}
         title="Edit Device"
-        open={isEditDeviceModalOpen}
-        onOk={handleEditDeviceOk}
-        onCancel={handleEditDeviceCancel}
+        footer={
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="secondary"
+              onClick={() => setIsEditDeviceModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEditDeviceOk}>Update Device</Button>
+          </div>
+        }
       >
-        <Input
-          placeholder="Device Name"
-          value={editDevice.deviceName}
-          onChange={(e) =>
-            setEditDevice({ ...editDevice, deviceName: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        <Input
-          placeholder="Location"
-          value={editDevice.location}
-          onChange={(e) =>
-            setEditDevice({ ...editDevice, location: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        {/* Relay Statuses */}
-        <Select
-          value={editDevice.relay1}
-          onChange={(value) => handleRelayChange(value, "relay1")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={editDevice.relay2}
-          onChange={(value) => handleRelayChange(value, "relay2")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={editDevice.relay3}
-          onChange={(value) => handleRelayChange(value, "relay3")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={editDevice.relay4}
-          onChange={(value) => handleRelayChange(value, "relay4")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
+        <div className="space-y-4">
+          <Input
+            placeholder="Device Name"
+            value={editDevice.deviceName || ""}
+            onChange={(e) =>
+              setEditDevice({ ...editDevice, deviceName: e.target.value })
+            }
+          />
+          <Input
+            placeholder="Location"
+            value={editDevice.location || ""}
+            onChange={(e) =>
+              setEditDevice({ ...editDevice, location: e.target.value })
+            }
+          />
+          <Select
+            value={editDevice.status || ""}
+            onChange={(value) => handleRelayChange(value, "status")}
+          >
+            <option value="Offline">Offline</option>
+            <option value="Online">Online</option>
+          </Select>
+          {[1, 2, 3, 4].map((relayNum) => (
+            <Select
+              key={relayNum}
+              value={editDevice[`relay${relayNum}` as keyof Device] || ""}
+              onChange={(value) => handleRelayChange(value, `relay${relayNum}`)}
+            >
+              <option value="Off">Relay {relayNum} - Off</option>
+              <option value="On">Relay {relayNum} - On</option>
+            </Select>
+          ))}
+        </div>
       </Modal>
-    </Content>
+    </div>
   );
 };
 
 export default DevicePage;
+
