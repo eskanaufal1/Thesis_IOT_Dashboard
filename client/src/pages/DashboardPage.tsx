@@ -1,72 +1,64 @@
+import React, { useEffect, useState } from "react";
 import {
   ApiOutlined,
   WifiOutlined,
   ExclamationCircleOutlined,
+  DisconnectOutlined,
 } from "@ant-design/icons";
-import { Col, Row, Statistic, Grid, Layout, Typography, Table } from "antd";
+import { Col, Row, Statistic, Layout, Typography, Table } from "antd";
+import apiClient from "../api"; // Import your Axios instance
 
 const { Content } = Layout;
 const { Title } = Typography;
-const { useBreakpoint } = Grid;
 
 const DashboardPage = () => {
-  const screens = useBreakpoint();
-
-  // Dummy Data
+  // Dummy data for device stats
   const totalDevices = 5;
   const onlineDevices = 4;
   const offlineDevices = 1;
   const maintenanceDevices = 0;
 
-  // Dummy relay data (Relay 1, 2, 3, 4 status)
-  const relayData = [
-    {
-      key: "1",
-      relay1: "On",
-      relay2: "Off",
-      relay3: "On",
-      relay4: "Off",
-      timestamp: "13/06/2025, 03:10:09",
-    },
-    {
-      key: "2",
-      relay1: "Off",
-      relay2: "On",
-      relay3: "Off",
-      relay4: "On",
-      timestamp: "13/06/2025, 01:10:08",
-    },
-    {
-      key: "3",
-      relay1: "On",
-      relay2: "On",
-      relay3: "Off",
-      relay4: "Off",
-      timestamp: "12/06/2025, 21:10:09",
-    },
-    {
-      key: "4",
-      relay1: "Off",
-      relay2: "Off",
-      relay3: "On",
-      relay4: "On",
-      timestamp: "12/06/2025, 19:10:09",
-    },
-    {
-      key: "5",
-      relay1: "On",
-      relay2: "Off",
-      relay3: "On",
-      relay4: "Off",
-      timestamp: "12/06/2025, 18:10:09",
-    },
-  ];
+  // State to store relay data from API
+  const [relayData, setRelayData] = useState([]);
+
+  useEffect(() => {
+    // Fetch device data from the API when the component mounts
+    apiClient
+      .get("/devices") // API call to fetch device data
+      .then((response) => {
+        // Assuming response.data is the array of devices you want
+        setRelayData(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching device data:", error);
+      });
+  }, []);
 
   const columns = [
     {
       title: "Device ID",
-      dataIndex: "key", // Use the key as the device identifier
-      key: "key",
+      dataIndex: "deviceName", // Use the key as the device identifier
+      key: "deviceName",
+    },
+    {
+      title: "Status", // Added Status column
+      dataIndex: "status", // Assuming 'status' is a field in the data
+      key: "status",
+      render: (text: string) => (
+        <span>
+          {text === "Online" ? (
+            <WifiOutlined style={{ color: "green", marginRight: 8 }} />
+          ) : (
+            <DisconnectOutlined style={{ color: "red", marginRight: 8 }} />
+          )}
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "Location", // Added Location column
+      dataIndex: "location", // Assuming 'location' is a field in the data
+      key: "location",
     },
     {
       title: "Relay 1",
@@ -101,9 +93,9 @@ const DashboardPage = () => {
       ),
     },
     {
-      title: "Timestamp",
-      dataIndex: "timestamp", // Timestamp of relay status change
-      key: "timestamp",
+      title: "Last Seen",
+      dataIndex: "lastSeen", // lastseen of relay status change
+      key: "lastSeen",
     },
   ];
 
@@ -111,26 +103,30 @@ const DashboardPage = () => {
     <Content
       style={{
         margin: "24px 16px",
-        paddingLeft: 50,
-        paddingRight: 50,
+        paddingLeft: 20,
+        paddingRight: 20,
         paddingTop: 30,
         paddingBottom: 30,
         minHeight: 280,
       }}
     >
       {/* Dashboard Overview Section */}
-      <Row gutter={[40, 25]}>
+      <Row
+        gutter={[40, 25]}
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: "8px",
+          border: "1px solid #d9d9d9",
+        }}
+      >
         {/* Total Devices Card */}
         <Col
-          xs={24}
-          sm={24}
+          xs={12}
+          sm={12}
           md={6}
           lg={6}
           style={{
             padding: "20px",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            border: "1px solid #d9d9d9",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between", // Distribute space evenly
@@ -146,15 +142,12 @@ const DashboardPage = () => {
 
         {/* Online Devices Card */}
         <Col
-          xs={24}
-          sm={24}
+          xs={12}
+          sm={12}
           md={6}
           lg={6}
           style={{
             padding: "20px",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            border: "1px solid #d9d9d9",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between", // Distribute space evenly
@@ -171,15 +164,12 @@ const DashboardPage = () => {
 
         {/* Offline Devices Card */}
         <Col
-          xs={24}
-          sm={24}
+          xs={12}
+          sm={12}
           md={6}
           lg={6}
           style={{
             padding: "20px",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            border: "1px solid #d9d9d9",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between", // Distribute space evenly
@@ -196,15 +186,12 @@ const DashboardPage = () => {
 
         {/* Maintenance Devices Card */}
         <Col
-          xs={24}
-          sm={24}
+          xs={12}
+          sm={12}
           md={6}
           lg={6}
           style={{
             padding: "20px",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            border: "1px solid #d9d9d9",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between", // Distribute space evenly
@@ -235,15 +222,13 @@ const DashboardPage = () => {
           <Title level={4}>Recent Sensor Readings</Title>
           <div
             style={{
-              padding: "20px",
+              padding: "1px",
               backgroundColor: "#fff",
-              // borderRadius: "8px",
-              // border: "1px solid #d9d9d9",
             }}
           >
             <Table
               columns={columns}
-              dataSource={relayData} // Update to use relay data
+              dataSource={relayData} // Use relay data from API
               pagination={false}
               bordered
               scroll={{ x: true }} // Allow horizontal scrolling for small screens

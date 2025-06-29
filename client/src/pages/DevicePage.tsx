@@ -1,391 +1,411 @@
+import React, { useState, useEffect } from "react";
 import {
-  ApiOutlined,
-  WifiOutlined,
-  ExclamationCircleOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons";
-import {
-  Col,
-  Row,
-  Statistic,
-  Grid,
-  Layout,
-  Typography,
-  Card,
   Button,
+  Input,
   Modal,
   Select,
-  Input,
+  Skeleton,
+  notification,
+  Row,
+  Col,
+  Card,
+  Statistic,
+  Typography,
+  Layout,
 } from "antd";
-import React, { useState } from "react";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  WifiOutlined,
+  DisconnectOutlined,
+  PlusOutlined, // Import PlusOutlined icon
+} from "@ant-design/icons";
+import apiClient from "../api"; // Import Axios instance
 
-const { Content } = Layout;
 const { Title } = Typography;
-const { useBreakpoint } = Grid;
 const { Option } = Select;
 
-const DevicePage = () => {
-  const screens = useBreakpoint();
+interface Device {
+  key: string;
+  deviceName: string;
+  status: string;
+  location: string;
+  relay1: string;
+  relay2: string;
+  relay3: string;
+  relay4: string;
+  lastSeen: string;
+}
+
+const getInitialDeviceState = (): Device => ({
+  key: "",
+  deviceName: "",
+  status: "Offline",
+  location: "",
+  relay1: "Off",
+  relay2: "Off",
+  relay3: "Off",
+  relay4: "Off",
+  lastSeen: new Date().toLocaleString(),
+});
+
+const DevicePage: React.FC = () => {
   const [isAddDeviceModalOpen, setIsAddDeviceModalOpen] = useState(false);
   const [isEditDeviceModalOpen, setIsEditDeviceModalOpen] = useState(false);
-  const [devices, setDevices] = useState([
-    {
-      key: "1",
-      deviceName: "Device Name 1",
-      status: "Online", // Adding status
-      location: "Living Room",
-      relay1: "On",
-      relay2: "Off",
-      relay3: "On",
-      relay4: "Off",
-      lastSeen: "13/06/2025, 03:10:09",
-    },
-    {
-      key: "2",
-      deviceName: "Device Name 2",
-      status: "Online", // Adding status
-      location: "Bedroom",
-      relay1: "Off",
-      relay2: "On",
-      relay3: "Off",
-      relay4: "On",
-      lastSeen: "13/06/2025, 01:10:08",
-    },
-    // More devices...
-  ]);
-  const [newDevice, setNewDevice] = useState({
-    deviceName: "",
-    status: "Offline", // Default status to "Offline"
-    location: "",
-    relay1: "Off",
-    relay2: "Off",
-    relay3: "Off",
-    relay4: "Off",
-  });
-  const [editDevice, setEditDevice] = useState<any>({});
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [newDevice, setNewDevice] = useState<Device>(getInitialDeviceState());
+  const [editDevice, setEditDevice] = useState<Partial<Device>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  // Add Device Modal Handler
+  useEffect(() => {
+    fetchDevices();
+  }, []);
+
+  const fetchDevices = async () => {
+    setLoading(true);
+    setError(false);
+
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setError(true);
+      notification.error({
+        message: "Error",
+        description: "Failed to load devices. Please try again later.",
+        placement: "top",
+      });
+    }, 5000);
+
+    try {
+      console.log("GET request to /devices");
+      const response = await apiClient.get("/devices");
+      clearTimeout(timeout);
+      const devicesWithKey = response.data.map((device: any) => ({
+        ...device,
+        key: device.id,
+      }));
+      setDevices(devicesWithKey);
+    } catch (error) {
+      clearTimeout(timeout);
+      setError(true);
+      console.error("Error fetching devices:", error);
+      notification.error({
+        message: "Error",
+        description: "Failed to load devices. Please try again later.",
+        placement: "top",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeviceAction = async (
+    method: string,
+    url: string,
+    data: Device | Partial<Device>,
+    onSuccess: () => void
+  ) => {
+    try {
+      let response;
+      if (method === "post") {
+        const modifiedData = { ...data };
+        console.log("POST request to", url, "with data:", modifiedData);
+        response = await apiClient.post(url, modifiedData);
+      } else if (method === "put") {
+        console.log("PUT request to", url, "with data:", data);
+        response = await apiClient.put(url, data);
+      } else {
+        throw new Error(`Unsupported method: ${method}`);
+      }
+      setDevices((prevDevices) => {
+        if (method === "post") {
+          return [...prevDevices, { ...response.data, key: response.data.id }];
+        }
+        return prevDevices.map((device) =>
+          device.key === data.key
+            ? { ...response.data, key: response.data.id }
+            : device
+        );
+      });
+      onSuccess();
+    } catch (error) {
+      console.error(
+        `Error ${method === "post" ? "adding" : "editing"} device:`,
+        error
+      );
+      notification.error({
+        message: `Error ${method === "post" ? "Adding" : "Editing"} Device`,
+        description:
+          "Something went wrong while changing the device data. Please try again.",
+        placement: "top",
+      });
+    }
+  };
+
   const handleAddDeviceOk = () => {
-    setDevices([
-      ...devices,
-      {
-        key: devices.length + 1 + "",
-        ...newDevice,
-        lastSeen: new Date().toLocaleString(),
-      },
-    ]);
-    setIsAddDeviceModalOpen(false);
+    const deviceData = {
+      deviceName: newDevice.deviceName,
+      status: newDevice.status,
+      location: newDevice.location,
+      relay1: newDevice.relay1,
+      relay2: newDevice.relay2,
+      relay3: newDevice.relay3,
+      relay4: newDevice.relay4,
+      lastSeen: newDevice.lastSeen,
+    };
+
+    handleDeviceAction("post", "/devices", deviceData, () => {
+      setIsAddDeviceModalOpen(false);
+      setNewDevice(getInitialDeviceState()); // Reset the new device state after adding
+    });
   };
 
-  const handleAddDeviceCancel = () => {
-    setIsAddDeviceModalOpen(false);
-  };
-
-  // Edit Device Modal Handler
   const handleEditDeviceOk = () => {
-    const updatedDevices = devices.map((device) =>
-      device.key === editDevice.key ? editDevice : device
-    );
-    setDevices(updatedDevices);
-    setIsEditDeviceModalOpen(false);
+    handleDeviceAction("put", `/devices/${editDevice?.key}`, editDevice, () => {
+      setIsEditDeviceModalOpen(false);
+    });
   };
 
-  const handleEditDeviceCancel = () => {
-    setIsEditDeviceModalOpen(false);
+  const handleDeleteDevice = async (key: string) => {
+    try {
+      console.log("DELETE request to /devices/" + key);
+      await apiClient.delete(`/devices/${key}`);
+      setDevices(devices.filter((device) => device.key !== key));
+    } catch (error) {
+      console.error("Error deleting device:", error);
+      notification.error({
+        message: "Error Deleting Device",
+        description: "Failed to delete the device. Please try again later.",
+        placement: "top",
+      });
+    }
   };
 
-  // Delete Device Handler
-  const handleDeleteDevice = (key: string) => {
-    setDevices(devices.filter((device) => device.key !== key));
+  const handleRelayChange = (value: string, relay: keyof Device) => {
+    if (editDevice) {
+      setEditDevice({
+        ...editDevice,
+        [relay]: value,
+      });
+    }
   };
 
-  // Handle Relay Change
-  const handleRelayChange = (value: string, relay: string) => {
-    setEditDevice((prevDevice: any) => ({
-      ...prevDevice,
-      [relay]: value,
-    }));
+  const handleStatusChange = (value: string) => {
+    if (editDevice) {
+      setEditDevice({
+        ...editDevice,
+        status: value,
+      });
+    }
   };
+
+  const renderRelaySelect = (relay: keyof Device) => (
+    <Select
+      key={relay} // Add key prop here
+      value={editDevice?.[relay]}
+      onChange={(value) => handleRelayChange(value, relay)}
+      style={{ width: "100%", marginBottom: 10 }}
+    >
+      <Option value="On">
+        <CheckCircleOutlined style={{ color: "green", marginRight: 10 }} />
+        On
+      </Option>
+      <Option value="Off">
+        <CloseCircleOutlined style={{ color: "red", marginRight: 10 }} />
+        Off
+      </Option>
+    </Select>
+  );
+
+  const renderDeviceModal = (isEdit: boolean) => (
+    <Modal
+      title={
+        isEdit ? (
+          <>
+            <EditOutlined style={{ marginRight: 10 }} />
+            Edit Device
+          </>
+        ) : (
+          <>
+            <PlusOutlined style={{ marginRight: 10 }} />
+            Add New Device
+          </>
+        )
+      }
+      open={isEdit ? isEditDeviceModalOpen : isAddDeviceModalOpen}
+      onOk={isEdit ? handleEditDeviceOk : handleAddDeviceOk}
+      onCancel={
+        isEdit
+          ? () => setIsEditDeviceModalOpen(false)
+          : () => setIsAddDeviceModalOpen(false)
+      }
+    >
+      <Input
+        placeholder="Device Name"
+        value={isEdit ? editDevice?.deviceName : newDevice.deviceName}
+        onChange={(e) => {
+          if (isEdit) {
+            setEditDevice({ ...editDevice, deviceName: e.target.value });
+          } else {
+            setNewDevice({ ...newDevice, deviceName: e.target.value });
+          }
+        }}
+        style={{ marginBottom: 10 }}
+      />
+      <Input
+        placeholder="Location"
+        value={isEdit ? editDevice?.location : newDevice.location}
+        onChange={(e) => {
+          if (isEdit) {
+            setEditDevice({ ...editDevice, location: e.target.value });
+          } else {
+            setNewDevice({ ...newDevice, location: e.target.value });
+          }
+        }}
+        style={{ marginBottom: 10 }}
+      />
+      <Select
+        value={isEdit ? editDevice?.status : newDevice.status}
+        onChange={handleStatusChange}
+        style={{ width: "100%", marginBottom: 10 }}
+      >
+        <Option value="Online">
+          <WifiOutlined style={{ color: "green", marginRight: 10 }} />
+          Online
+        </Option>
+        <Option value="Offline">
+          <DisconnectOutlined style={{ color: "red", marginRight: 10 }} />
+          Offline
+        </Option>
+      </Select>
+      {["relay1", "relay2", "relay3", "relay4"].map((relay) =>
+        renderRelaySelect(relay as keyof Device)
+      )}
+    </Modal>
+  );
 
   return (
-    <Content
-      style={{
-        margin: "24px 16px",
-        paddingLeft: 50,
-        paddingRight: 50,
-        paddingTop: 30,
-        paddingBottom: 30,
-        minHeight: 280,
-      }}
-    >
+    <Layout style={{ padding: 20 }}>
       {/* Header with Title and Add Device Button */}
       <Row justify="space-between" style={{ marginBottom: 20 }}>
         <Col>
-          <Title level={3}>Device Page</Title>
+          <Title level={3}>Devices</Title>
         </Col>
         <Col>
           <Button
             type="primary"
-            icon={<EditOutlined />}
-            style={{ marginTop: "8px" }}
+            icon={<PlusOutlined />}
             onClick={() => setIsAddDeviceModalOpen(true)}
           >
             Add Device
           </Button>
         </Col>
       </Row>
-
-      {/* Dashboard Overview Section */}
-      <Row gutter={[40, 25]}>
-        {devices.map((device) => (
-          <Col
-            xs={24}
-            sm={24}
-            md={24}
-            lg={8}
-            key={device.key}
-            style={{
-              padding: "20px",
-              backgroundColor: "#fff",
-              borderRadius: "8px",
-              border: "1px solid #d9d9d9",
-              display: "flex",
-              flexDirection: "column",
-              marginBottom: "20px", // Adding gap between devices
-              marginRight: 20,
-            }}
-          >
-            <Card
-              title={device.deviceName}
-              extra={
-                <div>
-                  <Button
-                    shape="circle"
-                    icon={<EditOutlined />}
-                    style={{ marginRight: "10px" }}
-                    onClick={() => {
-                      setEditDevice(device);
-                      setIsEditDeviceModalOpen(true);
-                    }}
-                  />
-                  <Button
-                    shape="circle"
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDeleteDevice(device.key)}
-                  />
-                </div>
-              }
-            >
-              <Row>
-                <Col span={24}>
-                  <Statistic
-                    title="Status"
-                    value={device.status}
-                    valueStyle={{
-                      color: device.status === "Online" ? "green" : "red",
-                    }}
-                    prefix={
-                      device.status === "Online" ? (
-                        <WifiOutlined style={{ color: "green" }} />
-                      ) : (
-                        <ExclamationCircleOutlined style={{ color: "red" }} />
-                      )
-                    }
-                  />
-                </Col>
-              </Row>
-
-              <Row>
-                <Col span={24}>
-                  <Title level={5}>Location: {device.location}</Title>
-                </Col>
-              </Row>
-
-              <Row>
-                <Col span={24}>
-                  <Title level={5}>Last Seen: {device.lastSeen}</Title>
-                </Col>
-              </Row>
-
-              {/* Relay Statuses with Icons */}
-              <Row gutter={[8, 8]}>
-                <Col span={12}>
-                  <Title level={5}>Relay 1</Title>
-                  {device.relay1 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
+      {/* Skeleton Loading */}
+      {loading ? (
+        <div style={styles.skeletonContainer}>
+          <Skeleton active paragraph={{ rows: 4 }} />
+        </div>
+      ) : error ? (
+        <div style={styles.skeletonContainer}>
+          <Skeleton active paragraph={{ rows: 4 }} />
+        </div>
+      ) : (
+        <Row gutter={[40, 25]}>
+          {devices.map((device) => (
+            <Col key={device.key} xs={24} sm={24} md={24} lg={8}>
+              <Card
+                title={device.deviceName}
+                extra={
+                  <div>
+                    <Button
+                      shape="circle"
+                      icon={<EditOutlined />}
+                      style={{ marginRight: "10px" }}
+                      onClick={() => {
+                        setEditDevice(device);
+                        setIsEditDeviceModalOpen(true);
+                      }}
                     />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
+                    <Button
+                      shape="circle"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDeleteDevice(device.key)}
                     />
+                  </div>
+                }
+              >
+                <Row>
+                  <Col span={24}>
+                    <Statistic
+                      title="Status"
+                      value={device.status}
+                      valueStyle={{
+                        color: device.status === "Online" ? "green" : "red",
+                      }}
+                      prefix={
+                        device.status === "Online" ? (
+                          <WifiOutlined style={{ color: "green" }} />
+                        ) : (
+                          <DisconnectOutlined style={{ color: "red" }} />
+                        )
+                      }
+                    />
+                  </Col>
+                </Row>
+                <Row>
+                  <Col span={24}>
+                    <Title level={5}>Location: {device.location}</Title>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col span={24}>
+                    <Title level={5}>Last Seen: {device.lastSeen}</Title>
+                  </Col>
+                </Row>
+                <Row gutter={[8, 8]}>
+                  {["relay1", "relay2", "relay3", "relay4"].map(
+                    (relay, index) => (
+                      <Col span={12} key={relay}>
+                        <Title level={5}>{`Relay ${index + 1}`}</Title>
+                        {device[relay as keyof Device] === "On" ? (
+                          <CheckCircleOutlined
+                            style={{ color: "blue", fontSize: "24px" }}
+                          />
+                        ) : (
+                          <CloseCircleOutlined
+                            style={{ color: "red", fontSize: "24px" }}
+                          />
+                        )}
+                      </Col>
+                    )
                   )}
-                </Col>
-
-                <Col span={12}>
-                  <Title level={5}>Relay 2</Title>
-                  {device.relay2 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Title level={5}>Relay 3</Title>
-                  {device.relay3 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Title level={5}>Relay 4</Title>
-                  {device.relay4 === "On" ? (
-                    <CheckCircleOutlined
-                      style={{ color: "blue", fontSize: "24px" }}
-                    />
-                  ) : (
-                    <CloseCircleOutlined
-                      style={{ color: "red", fontSize: "24px" }}
-                    />
-                  )}
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* Add Device Modal */}
-      <Modal
-        title="Add New Device"
-        open={isAddDeviceModalOpen}
-        onOk={handleAddDeviceOk}
-        onCancel={handleAddDeviceCancel}
-      >
-        <Input
-          placeholder="Device Name"
-          value={newDevice.deviceName}
-          onChange={(e) =>
-            setNewDevice({ ...newDevice, deviceName: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        <Input
-          placeholder="Location"
-          value={newDevice.location}
-          onChange={(e) =>
-            setNewDevice({ ...newDevice, location: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        {/* Relay Statuses */}
-        <Select
-          value={newDevice.relay1}
-          onChange={(value) => setNewDevice({ ...newDevice, relay1: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={newDevice.relay2}
-          onChange={(value) => setNewDevice({ ...newDevice, relay2: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={newDevice.relay3}
-          onChange={(value) => setNewDevice({ ...newDevice, relay3: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={newDevice.relay4}
-          onChange={(value) => setNewDevice({ ...newDevice, relay4: value })}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-      </Modal>
-
-      {/* Edit Device Modal */}
-      <Modal
-        title="Edit Device"
-        open={isEditDeviceModalOpen}
-        onOk={handleEditDeviceOk}
-        onCancel={handleEditDeviceCancel}
-      >
-        <Input
-          placeholder="Device Name"
-          value={editDevice.deviceName}
-          onChange={(e) =>
-            setEditDevice({ ...editDevice, deviceName: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        <Input
-          placeholder="Location"
-          value={editDevice.location}
-          onChange={(e) =>
-            setEditDevice({ ...editDevice, location: e.target.value })
-          }
-          style={{ marginBottom: 10 }}
-        />
-        {/* Relay Statuses */}
-        <Select
-          value={editDevice.relay1}
-          onChange={(value) => handleRelayChange(value, "relay1")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={editDevice.relay2}
-          onChange={(value) => handleRelayChange(value, "relay2")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={editDevice.relay3}
-          onChange={(value) => handleRelayChange(value, "relay3")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-        <Select
-          value={editDevice.relay4}
-          onChange={(value) => handleRelayChange(value, "relay4")}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <Option value="On">On</Option>
-          <Option value="Off">Off</Option>
-        </Select>
-      </Modal>
-    </Content>
+                </Row>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+      {/* Modals */}
+      {renderDeviceModal(false)} {/* Add Device Modal */}
+      {renderDeviceModal(true)} {/* Edit Device Modal */}
+    </Layout>
   );
+};
+
+const styles = {
+  skeletonContainer: {
+    padding: "20px",
+    position: "fixed" as "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    zIndex: 1000,
+    width: "50%",
+    textAlign: "center" as "center",
+  },
 };
 
 export default DevicePage;
