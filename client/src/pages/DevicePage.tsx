@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Card, Button, Input, Select, Modal } from "../components/UI";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Card } from "../components/ui/card";
+import { Modal } from "../components/ui/modal";
 import {
   WifiIcon,
   ExclamationIcon,
@@ -120,7 +123,7 @@ const DevicePage = () => {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">
           Devices
         </h1>
         <Button
@@ -140,80 +143,91 @@ const DevicePage = () => {
             className="animate-fade-in"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
-            <Card
-              title={device.deviceName}
-              extra={
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setEditDevice(device);
-                      setIsEditDeviceModalOpen(true);
-                    }}
-                    className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
-                  >
-                    <EditIcon size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteDevice(device.key)}
-                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
-                  >
-                    <DeleteIcon size={16} />
-                  </button>
-                </div>
-              }
-            >
-              <div className="space-y-4">
-                {/* Status */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Status
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <StatusIcon status={device.status} />
-                    <span
-                      className={`font-medium ${
-                        device.status === "Online"
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <div className="p-6">
+                {/* Card Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                    {device.deviceName}
+                  </h3>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        setEditDevice(device);
+                        setIsEditDeviceModalOpen(true);
+                      }}
+                      className="p-2 text-slate-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
                     >
-                      {device.status}
-                    </span>
+                      <EditIcon size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDevice(device.key)}
+                      className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                    >
+                      <DeleteIcon size={16} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Location */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Location
-                  </span>
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {device.location}
-                  </span>
-                </div>
-
-                {/* Last Seen */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Last Seen
-                  </span>
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {device.lastSeen}
-                  </span>
-                </div>
-
-                {/* Relays */}
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  {[1, 2, 3, 4].map((relayNum) => (
-                    <div key={relayNum} className="flex flex-col items-center space-y-2">
-                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Relay {relayNum}
-                      </div>
-                      <RelayStatus
-                        status={device[`relay${relayNum}` as keyof Device] as string}
-                      />
+                {/* Card Content */}
+                <div className="space-y-4">
+                  {/* Status */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Status
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <StatusIcon status={device.status} />
+                      <span
+                        className={`font-medium ${
+                          device.status === "Online"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {device.status}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Location */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Location
+                    </span>
+                    <span className="text-sm text-slate-900 dark:text-slate-50">
+                      {device.location}
+                    </span>
+                  </div>
+
+                  {/* Last Seen */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Last Seen
+                    </span>
+                    <span className="text-sm text-slate-900 dark:text-slate-50">
+                      {device.lastSeen}
+                    </span>
+                  </div>
+
+                  {/* Relays */}
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    {[1, 2, 3, 4].map((relayNum) => (
+                      <div
+                        key={relayNum}
+                        className="flex flex-col items-center space-y-2"
+                      >
+                        <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Relay {relayNum}
+                        </div>
+                        <RelayStatus
+                          status={
+                            device[`relay${relayNum}` as keyof Device] as string
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -229,7 +243,7 @@ const DevicePage = () => {
         footer={
           <div className="flex justify-end space-x-2">
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setIsAddDeviceModalOpen(false)}
             >
               Cancel
@@ -253,24 +267,31 @@ const DevicePage = () => {
               setNewDevice({ ...newDevice, location: e.target.value })
             }
           />
-          <Select
+          <select
             value={newDevice.status}
-            onChange={(value) => setNewDevice({ ...newDevice, status: value })}
+            onChange={(e) =>
+              setNewDevice({ ...newDevice, status: e.target.value })
+            }
+            className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
           >
             <option value="Offline">Offline</option>
             <option value="Online">Online</option>
-          </Select>
+          </select>
           {[1, 2, 3, 4].map((relayNum) => (
-            <Select
+            <select
               key={relayNum}
               value={newDevice[`relay${relayNum}` as keyof typeof newDevice]}
-              onChange={(value) =>
-                setNewDevice({ ...newDevice, [`relay${relayNum}`]: value })
+              onChange={(e) =>
+                setNewDevice({
+                  ...newDevice,
+                  [`relay${relayNum}`]: e.target.value,
+                })
               }
+              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
             >
               <option value="Off">Relay {relayNum} - Off</option>
               <option value="On">Relay {relayNum} - On</option>
-            </Select>
+            </select>
           ))}
         </div>
       </Modal>
@@ -283,7 +304,7 @@ const DevicePage = () => {
         footer={
           <div className="flex justify-end space-x-2">
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setIsEditDeviceModalOpen(false)}
             >
               Cancel
@@ -307,22 +328,26 @@ const DevicePage = () => {
               setEditDevice({ ...editDevice, location: e.target.value })
             }
           />
-          <Select
+          <select
             value={editDevice.status || ""}
-            onChange={(value) => handleRelayChange(value, "status")}
+            onChange={(e) => handleRelayChange(e.target.value, "status")}
+            className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
           >
             <option value="Offline">Offline</option>
             <option value="Online">Online</option>
-          </Select>
+          </select>
           {[1, 2, 3, 4].map((relayNum) => (
-            <Select
+            <select
               key={relayNum}
               value={editDevice[`relay${relayNum}` as keyof Device] || ""}
-              onChange={(value) => handleRelayChange(value, `relay${relayNum}`)}
+              onChange={(e) =>
+                handleRelayChange(e.target.value, `relay${relayNum}`)
+              }
+              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
             >
               <option value="Off">Relay {relayNum} - Off</option>
               <option value="On">Relay {relayNum} - On</option>
-            </Select>
+            </select>
           ))}
         </div>
       </Modal>
@@ -331,4 +356,3 @@ const DevicePage = () => {
 };
 
 export default DevicePage;
-

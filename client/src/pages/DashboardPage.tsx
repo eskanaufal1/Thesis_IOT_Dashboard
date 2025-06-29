@@ -1,5 +1,5 @@
 import React from "react";
-import { Card } from "../components/UI";
+import { Card } from "../components/ui/card";
 import { WifiIcon, ExclamationIcon } from "../components/Icons";
 
 const DashboardPage = () => {
@@ -58,29 +58,33 @@ const DashboardPage = () => {
     },
   ];
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon, 
-    color = "blue" 
-  }: { 
-    title: string; 
-    value: number; 
-    icon: React.ReactNode; 
+  const StatCard = ({
+    title,
+    value,
+    icon,
+    color = "blue",
+  }: {
+    title: string;
+    value: number;
+    icon: React.ReactNode;
     color?: string;
   }) => (
     <Card className="hover:shadow-lg transition-shadow duration-300 h-full">
-      <div className="flex items-center h-full">
-        <div className={`p-3 rounded-full bg-${color}-100 dark:bg-${color}-900/20 flex-shrink-0`}>
-          {icon}
-        </div>
-        <div className="ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-            {title}
-          </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {value}
-          </p>
+      <div className="p-6">
+        <div className="flex items-center h-full">
+          <div
+            className={`p-3 rounded-full bg-${color}-100 dark:bg-${color}-900/20 flex-shrink-0`}
+          >
+            {icon}
+          </div>
+          <div className="ml-4 flex-1">
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+              {title}
+            </p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+              {value}
+            </p>
+          </div>
         </div>
       </div>
     </Card>
@@ -90,17 +94,20 @@ const DashboardPage = () => {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">
           Dashboard
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-slate-600 dark:text-slate-400 mt-2">
           Welcome to your IoT Device Management Dashboard
         </p>
       </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="animate-fade-in h-32" style={{ animationDelay: "0.1s" }}>
+        <div
+          className="animate-fade-in h-32"
+          style={{ animationDelay: "0.1s" }}
+        >
           <StatCard
             title="Total Devices"
             value={totalDevices}
@@ -108,7 +115,10 @@ const DashboardPage = () => {
             color="blue"
           />
         </div>
-        <div className="animate-fade-in h-32" style={{ animationDelay: "0.2s" }}>
+        <div
+          className="animate-fade-in h-32"
+          style={{ animationDelay: "0.2s" }}
+        >
           <StatCard
             title="Online Devices"
             value={onlineDevices}
@@ -116,7 +126,10 @@ const DashboardPage = () => {
             color="green"
           />
         </div>
-        <div className="animate-fade-in h-32" style={{ animationDelay: "0.3s" }}>
+        <div
+          className="animate-fade-in h-32"
+          style={{ animationDelay: "0.3s" }}
+        >
           <StatCard
             title="Offline Devices"
             value={offlineDevices}
@@ -124,7 +137,10 @@ const DashboardPage = () => {
             color="red"
           />
         </div>
-        <div className="animate-fade-in h-32" style={{ animationDelay: "0.4s" }}>
+        <div
+          className="animate-fade-in h-32"
+          style={{ animationDelay: "0.4s" }}
+        >
           <StatCard
             title="Maintenance"
             value={maintenanceDevices}
@@ -136,62 +152,69 @@ const DashboardPage = () => {
 
       {/* Recent Relay Activity */}
       <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
-        <Card title="Recent Relay Activity">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Device Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Relay 1
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Relay 2
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Relay 3
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Relay 4
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {relayData.map((row) => (
-                  <tr
-                    key={row.key}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {row.deviceName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {row.timestamp}
-                    </td>
-                    {[row.relay1, row.relay2, row.relay3, row.relay4].map((status, idx) => (
-                      <td key={idx} className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            status === "On"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                          }`}
-                        >
-                          {status}
-                        </span>
-                      </td>
-                    ))}
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-6">
+              Recent Relay Activity
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <thead className="bg-slate-50 dark:bg-slate-800">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Device Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Timestamp
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Relay 1
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Relay 2
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Relay 3
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Relay 4
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white dark:bg-slate-950 divide-y divide-slate-200 dark:divide-slate-700">
+                  {relayData.map((row) => (
+                    <tr
+                      key={row.key}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                          {row.deviceName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        {row.timestamp}
+                      </td>
+                      {[row.relay1, row.relay2, row.relay3, row.relay4].map(
+                        (status, idx) => (
+                          <td key={idx} className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                status === "On"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                        )
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </Card>
       </div>
@@ -200,4 +223,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-
