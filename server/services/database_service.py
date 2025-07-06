@@ -1,6 +1,6 @@
 """
 Database service with modern patterns for better maintainability.
-Provides high-level database operations with proper error handling.
+Provides high-level database operations with proper error handling and security.
 """
 
 import logging
@@ -19,6 +19,7 @@ from models.schemas import (
     SystemLogCreate, SystemLogResponse,
     DeviceStatus, LogLevel
 )
+from services.security_service import SecurityService
 
 logger = logging.getLogger(__name__)
 
@@ -43,62 +44,122 @@ class DatabaseService:
     
     # Device operations
     async def create_device(self, device_data: DeviceCreate) -> Optional[DeviceResponse]:
-        """Create a new device"""
+        """Create a new device with input validation and sanitization"""
         try:
             async with self.get_session() as db:
+                # Validate and sanitize device input
+                device_dict = device_data.dict()
+                clean_data = SecurityService.validate_device_input(device_dict)
+                
                 # Check if device already exists
-                existing = db.query(Device).filter(Device.device_id == device_data.device_id).first()
+                existing = SecurityService.safe_query_execution(
+                    db,
+                    lambda db_session, dev_id: db_session.query(Device).filter(Device.device_id == dev_id).first(),
+                    clean_data['device_id']
+                )
+                
                 if existing:
-                    logger.warning(f"Device {device_data.device_id} already exists")
+                    logger.warning(f"Device {clean_data['device_id']} already exists")
                     return None
                 
-                device = Device(**device_data.dict())
-                db.add(device)
-                db.commit()
-                db.refresh(device)
+                device = Device(**clean_data)
+                
+                def create_device_transaction(db_session, dev):
+                    db_session.add(dev)
+                    db_session.commit()
+                    db_session.refresh(dev)
+                    return dev
+                
+                device = SecurityService.safe_query_execution(
+                    db,
+                    create_device_transaction,
+                    device
+                )
                 
                 return DeviceResponse.from_orm(device)
+        except ValueError as e:
+            logger.error(f"Device validation error: {e}")
+            return None
         except Exception as e:
             logger.error(f"Error creating device: {e}")
             return None
     
     async def get_device(self, device_id: str) -> Optional[DeviceResponse]:
-        """Get device by ID"""
+        """Get device by ID with input sanitization"""
         try:
+            # Sanitize device ID
+            clean_device_id = SecurityService.sanitize_string(device_id, max_length=50)
+            if not clean_device_id:
+                return None
+            
             async with self.get_session() as db:
-                device = db.query(Device).filter(Device.device_id == device_id).first()
+                device = SecurityService.safe_query_execution(
+                    db,
+                    lambda db_session, dev_id: db_session.query(Device).filter(Device.device_id == dev_id).first(),
+                    clean_device_id
+                )
                 return DeviceResponse.from_orm(device) if device else None
         except Exception as e:
             logger.error(f"Error getting device: {e}")
             return None
     
     async def get_all_devices(self) -> List[DeviceResponse]:
-        """Get all devices"""
+        """Get all devices with safe query execution"""
         try:
             async with self.get_session() as db:
-                devices = db.query(Device).all()
+                devices = SecurityService.safe_query_execution(
+                    db,
+                    lambda db_session: db_session.query(Device).all()
+                )
                 return [DeviceResponse.from_orm(device) for device in devices]
         except Exception as e:
             logger.error(f"Error getting devices: {e}")
             return []
     
     async def update_device(self, device_id: str, updates: DeviceUpdate) -> Optional[DeviceResponse]:
-        """Update device"""
+        """Update device with input validation and sanitization"""
         try:
+            # Sanitize device ID
+            clean_device_id = SecurityService.sanitize_string(device_id, max_length=50)
+            if not clean_device_id:
+                return None
+            
             async with self.get_session() as db:
-                device = db.query(Device).filter(Device.device_id == device_id).first()
+                device = SecurityService.safe_query_execution(
+                    db,
+                    lambda db_session, dev_id: db_session.query(Device).filter(Device.device_id == dev_id).first(),
+                    clean_device_id
+                )
+                
                 if not device:
                     return None
                 
-                update_data = updates.dict(exclude_unset=True)
-                for field, value in update_data.items():
-                    setattr(device, field, value)
+                # Validate and sanitize update data
+                update_dict = updates.dict(exclude_unset=True)
+                clean_updates = SecurityService.validate_device_input(update_dict)
+                
+                # Update device fields
+                for field, value in clean_updates.items():
+                    if hasattr(device, field):
+                        setattr(device, field, value)
                 
                 device.updated_at = datetime.utcnow()
-                db.commit()
-                db.refresh(device)
+                
+                def update_device_transaction(db_session, dev):
+                    db_session.commit()
+                    db_session.refresh(dev)
+                    return dev
+                
+                device = SecurityService.safe_query_execution(
+                    db,
+                    update_device_transaction,
+                    device
+                )
                 
                 return DeviceResponse.from_orm(device)
+        except ValueError as e:
+            logger.error(f"Device update validation error: {e}")
+            return None
         except Exception as e:
             logger.error(f"Error updating device: {e}")
             return None

@@ -24,6 +24,7 @@ from models.user import User  # Import user model
 
 # Import API routes
 from api.auth import router as auth_router
+from api.devices import router as devices_router
 
 # Load environment variables
 load_dotenv()
@@ -118,6 +119,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(auth_router)
+app.include_router(devices_router)
 
 
 # Basic routes
@@ -153,28 +155,22 @@ async def health_check():
 @app.get("/api/devices")
 async def get_devices(db = Depends(get_db)):
     """Get all devices."""
-    # TODO: Implement device retrieval from database
-    return {"devices": [], "message": "Device endpoints not fully implemented yet"}
+    # This endpoint is deprecated - use /api/devices/ instead
+    return {"devices": [], "message": "Please use /api/devices/ endpoint instead"}
 
 
 @app.get("/api/telemetry/{device_id}")
 async def get_device_telemetry(device_id: str, db = Depends(get_db)):
     """Get telemetry data for a specific device."""
-    # TODO: Implement telemetry data retrieval
-    return {"device_id": device_id, "telemetry": [], "message": "Telemetry endpoints not fully implemented yet"}
+    # This endpoint is deprecated - use /api/devices/{device_id}/telemetry instead
+    return {"device_id": device_id, "telemetry": [], "message": "Please use /api/devices/{device_id}/telemetry endpoint instead"}
 
 
 @app.post("/api/devices/{device_id}/relay/{relay_id}")
 async def control_relay(device_id: str, relay_id: int, state: bool):
     """Control device relay."""
-    if mqtt_service:
-        success = await mqtt_service.send_relay_command(device_id, relay_id, state)
-        if success:
-            return {"message": f"Relay {relay_id} {'turned on' if state else 'turned off'} for device {device_id}"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to send relay command")
-    else:
-        raise HTTPException(status_code=503, detail="MQTT service not available")
+    # This endpoint is deprecated - use /api/devices/{device_id}/relay/{relay_id} instead
+    return {"message": "Please use /api/devices/{device_id}/relay/{relay_id} endpoint instead"}
 
 
 

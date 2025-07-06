@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from config.database import get_db
 from models.auth_schemas import LoginRequest, LoginResponse, UserCreate, UserResponse, PasswordChangeRequest
 from models.user import User
+from services.security_service import SecurityService
 from services.auth_service import (
     authenticate_user, 
     create_access_token, 
@@ -146,28 +147,59 @@ async def update_current_user(
 ):
     """Update current user information."""
     
-    # Update allowed fields
-    allowed_fields = ["email", "full_name", "phone", "company", "location", "bio"]
-    for field in allowed_fields:
-        if field in user_update:
-            setattr(current_user, field, user_update[field])
-    
-    db.commit()
-    db.refresh(current_user)
-    
-    return UserResponse(
-        id=current_user.id,
-        username=current_user.username,
-        email=current_user.email,
-        full_name=current_user.full_name,
-        phone=current_user.phone,
-        company=current_user.company,
-        location=current_user.location,
-        bio=current_user.bio,
-        role=current_user.role,
-        is_active=current_user.is_active,
-        created_at=current_user.created_at.isoformat() if current_user.created_at else ""
-    )
+    # Sanitize and validate input
+    try:
+        # Only allow specific fields to be updated
+        allowed_fields = ["email", "full_name", "phone", "company", "location", "bio"]
+        clean_data = SecurityService.sanitize_dict(user_update, allowed_fields)
+        
+        # Additional validation for email if provided
+        if "email" in clean_data:
+            # Use the user validation function to validate email format
+            temp_data = {"email": clean_data["email"]}
+            SecurityService.validate_user_input(temp_data)
+        
+        # Update allowed fields
+        for field in allowed_fields:
+            if field in clean_data:
+                setattr(current_user, field, clean_data[field])
+        
+        # Use safe query execution
+        def update_user_transaction(db_session, user_obj):
+            db_session.commit()
+            db_session.refresh(user_obj)
+            return user_obj
+        
+        updated_user = SecurityService.safe_query_execution(
+            db,
+            update_user_transaction,
+            current_user
+        )
+        
+        return UserResponse(
+            id=updated_user.id,
+            username=updated_user.username,
+            email=updated_user.email,
+            full_name=updated_user.full_name,
+            phone=updated_user.phone,
+            company=updated_user.company,
+            location=updated_user.location,
+            bio=updated_user.bio,
+            role=updated_user.role,
+            is_active=updated_user.is_active,
+            created_at=updated_user.created_at.isoformat() if updated_user.created_at else ""
+        )
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid input data: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user profile"
+        )
 
 
 @router.post("/change-password")
@@ -185,9 +217,19 @@ async def change_password(
             detail="Current password is incorrect"
         )
     
-    # Update password
-    current_user.hashed_password = get_password_hash(password_change.new_password)
-    db.commit()
+    # Update password using safe query execution
+    def update_password_transaction(db_session, user_obj, new_hash):
+        user_obj.hashed_password = new_hash
+        db_session.commit()
+        return user_obj
+    
+    new_password_hash = get_password_hash(password_change.new_password)
+    SecurityService.safe_query_execution(
+        db,
+        update_password_transaction,
+        current_user,
+        new_password_hash
+    )
     
     return {"message": "Password updated successfully"}
 
