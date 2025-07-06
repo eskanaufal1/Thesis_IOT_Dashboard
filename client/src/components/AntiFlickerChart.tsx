@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -41,7 +41,7 @@ export const AntiFlickerChart = ({
   const isInitialized = useRef(false);
 
   // Color mapping
-  const colorMap = {
+  const colorMap = useMemo(() => ({
     blue: "#3B82F6",
     green: "#10B981",
     red: "#EF4444",
@@ -49,10 +49,10 @@ export const AntiFlickerChart = ({
     indigo: "#6366F1",
     pink: "#EC4899",
     teal: "#14B8A6",
-  };
+  }), []);
 
-  const getColor = (colorKey: string) =>
-    colorMap[colorKey as keyof typeof colorMap] || "#3B82F6";
+  const getColor = useCallback((colorKey: string) =>
+    colorMap[colorKey as keyof typeof colorMap] || "#3B82F6", [colorMap]);
 
   useEffect(() => {
     if (!canvasRef.current || isInitialized.current) return;
@@ -258,7 +258,7 @@ export const AntiFlickerChart = ({
     } catch (error) {
       console.warn("Chart update error:", error);
     }
-  }, [data, title]);
+  }, [data, title, color, unit, getColor]);
 
   const currentValue = data[data.length - 1]?.value || 0;
 
