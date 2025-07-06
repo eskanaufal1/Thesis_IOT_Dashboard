@@ -38,8 +38,8 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
     navigate('/');
   };
 
-  const userInitials = user?.fullName 
-    ? user.fullName.split(' ').map((n: string) => n[0]).join('')
+  const userInitials = user?.full_name 
+    ? user.full_name.split(' ').map((n: string) => n[0]).join('')
     : user?.username?.[0]?.toUpperCase() || 'J';
 
   const menuItems = [
@@ -71,14 +71,14 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white dark:border-gray-800 rounded-full"></div>
         </div>
-        <div className="text-left hidden lg:block">
+        {/* <div className="text-left hidden lg:block">
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {user?.fullName || user?.username || 'Jelly User'}
+            {user?.full_name || user?.username || null}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {user?.email || 'jelly@iotdashboard.com'}
           </p>
-        </div>
+        </div> */}
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
@@ -108,7 +108,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {user?.fullName || user?.username || 'Jelly User'}
+                    {user?.full_name || user?.username || 'Jelly User'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {user?.email || 'jelly@iotdashboard.com'}
@@ -144,13 +144,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
               ))}
             </div>
 
-            {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>Online</span>
-                <span>Last seen: now</span>
-              </div>
-            </div>
+           
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,30 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, validatePassword } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import { Lock, Settings, Shield, Camera, Save, Edit3 } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateProfile, changePassword } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState({
-    username: user?.username || 'jelly',
-    email: user?.email || 'jelly@iotdashboard.com',
-    fullName: user?.fullName || 'Jelly User',
-    bio: user?.bio || 'IoT Dashboard Administrator',
-    location: user?.location || 'San Francisco, CA',
-    phone: user?.phone || '+1 (555) 123-4567',
-    company: user?.company || 'IoT Solutions Inc.',
-    role: user?.role || 'System Administrator'
+    username: user?.username || '',
+    email: user?.email || '',
+    full_name: user?.full_name || '',
+    bio: user?.bio || '',
+    location: user?.location || '',
+    phone: user?.phone || '',
+    company: user?.company || '',
+    role: user?.role || ''
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Update profile data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        username: user.username || '',
+        email: user.email || '',
+        full_name: user.full_name || '',
+        bio: user.bio || '',
+        location: user.location || '',
+        phone: user.phone || '',
+        company: user.company || '',
+        role: user.role || ''
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,17 +54,64 @@ const ProfilePage: React.FC = () => {
     setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = () => {
-    // Here you would typically save to a backend
-    console.log('Saving profile:', profileData);
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    setIsLoading(true);
+    setMessage(null);
+    
+    try {
+      const success = await updateProfile({
+        email: profileData.email,
+        full_name: profileData.full_name,
+        phone: profileData.phone,
+        company: profileData.company,
+        location: profileData.location,
+        bio: profileData.bio,
+      });
+
+      if (success) {
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setIsEditing(false);
+      } else {
+        setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setMessage({ type: 'error', text: 'An error occurred while updating profile.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSavePassword = () => {
-    // Here you would typically save to a backend
-    console.log('Changing password');
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setShowPasswordChange(false);
+  const handleSavePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    if (!validatePassword(passwordData.newPassword).isValid) {
+      setMessage({ type: 'error', text: 'New password does not meet requirements.' });
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      const success = await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      
+      if (success) {
+        setMessage({ type: 'success', text: 'Password changed successfully!' });
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordChange(false);
+      } else {
+        setMessage({ type: 'error', text: 'Failed to change password. Check your current password.' });
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      setMessage({ type: 'error', text: 'An error occurred while changing password.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,6 +125,22 @@ const ProfilePage: React.FC = () => {
         >
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Profile Settings</h1>
           <p className="text-gray-600 dark:text-gray-300">Manage your account settings and preferences</p>
+          
+          {/* Message Display */}
+          {message && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`mt-4 p-4 rounded-lg ${
+                message.type === 'success' 
+                  ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700'
+                  : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-700'
+              }`}
+            >
+              {message.text}
+            </motion.div>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -73,13 +154,13 @@ const ProfilePage: React.FC = () => {
             <Card className="p-6 text-center">
               <div className="relative mb-6">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto">
-                  {profileData.fullName.split(' ').map(n => n[0]).join('')}
+                  {profileData.full_name ? profileData.full_name.split(' ').map(n => n[0]).join('') : profileData.username[0]?.toUpperCase()}
                 </div>
                 <button className="absolute bottom-0 right-1/2 transform translate-x-1/2 translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg border-2 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <Camera className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </button>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{profileData.fullName}</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{profileData.full_name || profileData.username}</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-2">@{profileData.username}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{profileData.role}</p>
               <div className="flex items-center justify-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
@@ -121,8 +202,8 @@ const ProfilePage: React.FC = () => {
                     Full Name
                   </label>
                   <Input
-                    name="fullName"
-                    value={profileData.fullName}
+                    name="full_name"
+                    value={profileData.full_name}
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     className="w-full"
@@ -210,15 +291,17 @@ const ProfilePage: React.FC = () => {
                   <Button
                     onClick={() => setIsEditing(false)}
                     variant="outline"
+                    disabled={isLoading}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSaveProfile}
                     className="flex items-center space-x-2"
+                    disabled={isLoading}
                   >
                     <Save className="w-4 h-4" />
-                    <span>Save Changes</span>
+                    <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
                   </Button>
                 </div>
               )}
@@ -297,15 +380,17 @@ const ProfilePage: React.FC = () => {
                   <Button
                     onClick={() => setShowPasswordChange(false)}
                     variant="outline"
+                    disabled={isLoading}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSavePassword}
                     className="flex items-center space-x-2"
+                    disabled={isLoading}
                   >
                     <Save className="w-4 h-4" />
-                    <span>Update Password</span>
+                    <span>{isLoading ? 'Updating...' : 'Update Password'}</span>
                   </Button>
                 </div>
               )}

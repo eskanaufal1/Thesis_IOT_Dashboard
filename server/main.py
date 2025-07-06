@@ -20,9 +20,10 @@ from services.socketio_service import SocketIOService
 # Import database
 from config.database import engine, get_db
 from models.database import Base
+from models.user import User  # Import user model
 
-# Import API routes (will create these)
-# from api import devices, telemetry, dashboard
+# Import API routes
+from api.auth import router as auth_router
 
 # Load environment variables
 load_dotenv()
@@ -114,6 +115,9 @@ app.add_middleware(
 )
 
 # Note: Socket.IO will be handled by the socketio service directly
+
+# Include API routers
+app.include_router(auth_router)
 
 
 # Basic routes
