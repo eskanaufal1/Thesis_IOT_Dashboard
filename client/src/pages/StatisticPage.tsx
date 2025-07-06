@@ -55,19 +55,19 @@ const StatisticPage = () => {
     })),
     relay1: Array.from({ length: 50 }, (_, i) => ({
       timestamp: Date.now() - (49 - i) * 1000,
-      value: generateDummyData(12, 3, 0.01),
+      value: generateDummyData(2.5, 0.5, 0.01),
     })),
     relay2: Array.from({ length: 50 }, (_, i) => ({
       timestamp: Date.now() - (49 - i) * 1000,
-      value: generateDummyData(5, 1.5, -0.005),
+      value: generateDummyData(1.2, 0.3, -0.005),
     })),
     relay3: Array.from({ length: 50 }, (_, i) => ({
       timestamp: Date.now() - (49 - i) * 1000,
-      value: generateDummyData(24, 4, 0.008),
+      value: generateDummyData(4.0, 0.8, 0.008),
     })),
     relay4: Array.from({ length: 50 }, (_, i) => ({
       timestamp: Date.now() - (49 - i) * 1000,
-      value: generateDummyData(3.3, 0.8, 0.002),
+      value: generateDummyData(0.8, 0.2, 0.002),
     })),
   });
 
@@ -76,10 +76,10 @@ const StatisticPage = () => {
     voltage: 230,
     current: 10,
     power: 2000,
-    relay1: 12, // Relay 1 Voltage
-    relay2: 5, // Relay 2 Voltage
-    relay3: 24, // Relay 3 Voltage
-    relay4: 3.3, // Relay 4 Voltage
+    relay1: 2.5, // Relay 1 Current
+    relay2: 1.2, // Relay 2 Current
+    relay3: 4.0, // Relay 3 Current
+    relay4: 0.8, // Relay 4 Current
   });
   const [relayStatus, setRelayStatus] = useState([false, false, false, false]);
   const [selectedDevice, setSelectedDevice] = useState("device1");
@@ -109,19 +109,19 @@ const StatisticPage = () => {
     const newVoltage = { timestamp: now, value: generateDummyData(230, 10, 0) };
     const newCurrent = { timestamp: now, value: generateDummyData(10, 5, 0) };
     const newPower = { timestamp: now, value: generateDummyData(2000, 500, 0) };
-    const newRelay1 = { timestamp: now, value: generateDummyData(12, 3, 0.01) }; // Relay 1: 12V
+    const newRelay1 = { timestamp: now, value: generateDummyData(2.5, 0.5, 0.01) }; // Relay 1: 2.5A
     const newRelay2 = {
       timestamp: now,
-      value: generateDummyData(5, 1.5, -0.005),
-    }; // Relay 2: 5V
+      value: generateDummyData(1.2, 0.3, -0.005),
+    }; // Relay 2: 1.2A
     const newRelay3 = {
       timestamp: now,
-      value: generateDummyData(24, 4, 0.008),
-    }; // Relay 3: 24V
+      value: generateDummyData(4.0, 0.8, 0.008),
+    }; // Relay 3: 4.0A
     const newRelay4 = {
       timestamp: now,
-      value: generateDummyData(3.3, 0.8, 0.002),
-    }; // Relay 4: 3.3V
+      value: generateDummyData(0.8, 0.2, 0.002),
+    }; // Relay 4: 0.8A
 
     // Update chart data state (React will detect changes)
     setChartData((prevData) => ({
@@ -432,34 +432,34 @@ const StatisticPage = () => {
         <Card className="p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-              Relay 1 Voltage
+              Relay 1 Current
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              12V relay monitoring
+              2.5A relay monitoring
             </p>
           </div>
           <AntiFlickerChart
             data={chartData.relay1}
             color="purple"
             title="Relay 1"
-            unit="V"
+            unit="A"
           />
         </Card>
 
         <Card className="p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-              Relay 2 Voltage
+              Relay 2 Current
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              5V relay monitoring
+              1.2A relay monitoring
             </p>
           </div>
           <AntiFlickerChart
             data={chartData.relay2}
             color="indigo"
             title="Relay 2"
-            unit="V"
+            unit="A"
           />
         </Card>
       </motion.div>
@@ -474,34 +474,34 @@ const StatisticPage = () => {
         <Card className="p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-              Relay 3 Voltage
+              Relay 3 Current
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              24V relay monitoring
+              4.0A relay monitoring
             </p>
           </div>
           <AntiFlickerChart
             data={chartData.relay3}
             color="pink"
             title="Relay 3"
-            unit="V"
+            unit="A"
           />
         </Card>
 
         <Card className="p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-              Relay 4 Voltage
+              Relay 4 Current
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              3.3V relay monitoring
+              0.8A relay monitoring
             </p>
           </div>
           <AntiFlickerChart
             data={chartData.relay4}
             color="teal"
             title="Relay 4"
-            unit="V"
+            unit="A"
           />
         </Card>
       </motion.div>

@@ -173,7 +173,9 @@ async def control_relay(device_id: str, relay_id: int, state: bool):
         raise HTTPException(status_code=503, detail="MQTT service not available")
 
 
-if __name__ == "__main__":
+
+def main():
+    """Main entry point for the IoT Dashboard Backend."""
     import uvicorn
     
     # Configuration from environment
@@ -189,3 +191,7 @@ if __name__ == "__main__":
         reload=reload,
         log_level="info"
     )
+
+
+if __name__ == "__main__":
+    main()

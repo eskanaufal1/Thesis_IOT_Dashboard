@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
+import UserDropdown from './UserDropdown';
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,7 +14,7 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: '📊' },
+    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
     { name: 'Devices', href: '/device', icon: '💻' },
     { name: 'Statistics', href: '/statistic', icon: '📈' },
     { name: 'Chatbot', href: '/chatbot', icon: '🤖' },
@@ -103,10 +104,8 @@ const Layout = ({ children }: LayoutProps) => {
             </button>
 
             <div className="flex items-center space-x-4 ml-auto">
-              {/* User avatar */}
-              <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">U</span>
-              </div>
+              {/* User Dropdown */}
+              <UserDropdown />
             </div>
           </div>
         </div>
