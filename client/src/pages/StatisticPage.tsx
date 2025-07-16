@@ -3,6 +3,7 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { motion } from "framer-motion";
 import { AntiFlickerChart } from "../components/AntiFlickerChart";
+import MQTTBrokerControl from "../components/MQTTBrokerControl";
 
 // Enhanced dummy data generator with TradingView-like patterns
 const generateDummyData = (
@@ -349,6 +350,16 @@ const StatisticPage = () => {
             </motion.div>
           ))}
         </div>
+      </motion.div>
+
+      {/* MQTT Broker Control Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.5 }}
+        className="mb-8"
+      >
+        <MQTTBrokerControl />
       </motion.div>
 
       {/* Real-time Charts Section - Bigger Charts Layout */}

@@ -1,124 +1,52 @@
-# IoT Dashboard Backend
+# FastAPI Backend for IoT Dashboard
 
-A FastAPI-based backend for IoT device management with real-time data visualization.
+A simple and reusable FastAPI backend with authentication, database integration, and MQTT support.
 
 ## Features
 
-- Real-time MQTT communication with IoT devices
-- WebSocket integration using Socket.IO
-- SQLite database for data persistence
-- RESTful API endpoints
-- Device management and telemetry data collection
+- FastAPI web framework
+- JWT Authentication
+- SQLite database with SQLAlchemy ORM
+- MQTT client integration
+- Pydantic models for validation
+- Modular and reusable components
 
-## Quick Start
+## Setup
 
-### Prerequisites
-
-- Python 3.11+
-- [uv](https://github.com/astral-sh/uv) package manager
-
-### Installation
-
-1. **Install uv** (if not already installed):
-
-   ```powershell
-   winget install --id=astral-sh.uv -e
-   ```
-
-2. **Run setup script** (Windows):
-
-   ```powershell
-   setup.bat
-   ```
-
-   Or manually:
-
-   ```powershell
-   # Create virtual environment
-   uv venv
-
-   # Install dependencies
-   uv pip install -r requirements.txt --python venv
-
-   # Setup environment variables
-   copy .env.template .env
-   # Edit .env with your configuration
-   ```
-
-3. **Start development server**:
-
-   ```powershell
-   run_dev.bat
-   ```
-
-   Or manually:
-
-   ```powershell
-   venv\Scripts\activate
-   uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-## Development
-
-### Package Management with uv
-
-```powershell
-# Add new dependency
-uv pip install package-name --python venv
-
-# Remove dependency
-uv pip uninstall package-name --python venv
-
-# Update requirements.txt
-uv pip freeze --python venv > requirements.txt
-
-# Install development tools
-uv pip install pytest black isort flake8 --python venv
+1. Install dependencies:
+```bash
+uv sync
 ```
 
-### Code Quality
-
-```powershell
-# Format code
-uv run black .
-uv run isort .
-
-# Lint code
-uv run flake8 .
-
-# Run tests
-uv run pytest
+2. Run the development server:
+```bash
+uv run python -m fastapi dev main.py --port 8000
 ```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user profile
+- `PUT /api/auth/me` - Update user profile
+- `POST /api/auth/change-password` - Change password
+
+### IoT Data
+- `GET /api/mqtt/status` - Get MQTT connection status
+- `POST /api/mqtt/publish` - Publish message to MQTT topic
+- `GET /api/data/sensors` - Get sensor data
+- `POST /api/data/sensors` - Create sensor data entry
 
 ## Environment Variables
 
-See `.env.template` for all configuration options. Key variables:
-
-- `DATABASE_PATH`: Path to SQLite database
-- `MQTT_BROKER_HOST`: MQTT broker hostname
-- `MQTT_BROKER_PORT`: MQTT broker port
-- `SECRET_KEY`: JWT secret key (change in production!)
-- `SOCKETIO_CORS_ORIGINS`: Allowed CORS origins for Socket.IO
-
-## Project Structure
+Create a `.env` file in the server directory:
 
 ```
-server/
-├── .env                 # Environment configuration
-├── .env.template        # Environment template
-├── requirements.txt     # Python dependencies
-├── pyproject.toml      # Project configuration
-├── main.py             # FastAPI application entry point
-├── models/             # Database models and schemas
-├── services/           # Business logic services
-├── config/             # Configuration modules
-├── venv/               # Virtual environment (uv managed)
-└── data/               # Database files
+SECRET_KEY=your-secret-key-here
+DATABASE_URL=sqlite:///./app.db
+MQTT_BROKER_HOST=localhost
+MQTT_BROKER_PORT=1883
+MQTT_USERNAME=
+MQTT_PASSWORD=
 ```
-
-## API Documentation
-
-Once running, visit:
-
-- **Interactive API docs**: http://localhost:8000/docs
-- **ReDoc documentation**: http://localhost:8000/redoc

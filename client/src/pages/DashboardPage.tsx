@@ -13,7 +13,7 @@ const DashboardPage = () => {
   const relayData = [
     {
       key: "1",
-      deviceName: "Smart Home Controller",
+      deviceName: "Device 1",
       relay1: "On",
       relay2: "Off",
       relay3: "On",
@@ -22,7 +22,7 @@ const DashboardPage = () => {
     },
     {
       key: "2",
-      deviceName: "Garden Irrigation System",
+      deviceName: "Device 2",
       relay1: "Off",
       relay2: "On",
       relay3: "Off",
@@ -31,7 +31,7 @@ const DashboardPage = () => {
     },
     {
       key: "3",
-      deviceName: "Warehouse Lighting",
+      deviceName: "Device 3",
       relay1: "On",
       relay2: "On",
       relay3: "Off",
@@ -40,7 +40,7 @@ const DashboardPage = () => {
     },
     {
       key: "4",
-      deviceName: "Security Access Control",
+      deviceName: "Device 4",
       relay1: "Off",
       relay2: "Off",
       relay3: "On",
@@ -49,7 +49,7 @@ const DashboardPage = () => {
     },
     {
       key: "5",
-      deviceName: "HVAC Controller",
+      deviceName: "Device 5",
       relay1: "On",
       relay2: "Off",
       relay3: "On",
